@@ -149,8 +149,6 @@ def anneal(C_i, C_ij, mu, sigma, l, strength_scale, energy_fraction, ngauges, ma
                 continue
             
             # adjust chain strength
-            rescale_couplers = strength_scale * max(np.amax(np.abs(np.array(h0))), np.amax(np.abs(np.array(list(j0.values())))))
-    #         print('scaling by', rescale_couplers)
             for k, v in j0.items():
                 j0[k] /= strength_scale
             for i in range(len(h0)):
@@ -200,7 +198,6 @@ def anneal(C_i, C_ij, mu, sigma, l, strength_scale, energy_fraction, ngauges, ma
         
         unique_energies, unique_indices = np.unique(energies, return_index=True)
         ground_energy = np.amin(unique_energies)
-#         print('ground energy', ground_energy)
         if ground_energy < 0:
             threshold_energy = (1 - energy_fraction) * ground_energy
         else:
@@ -225,7 +222,6 @@ def anneal(C_i, C_ij, mu, sigma, l, strength_scale, energy_fraction, ngauges, ma
 
 def create_data(sig, bkg):
     n_classifiers = sig.shape[1]
-#     predictions = np.concatenate((sig, bkg))
     predictions = np.concatenate((np.sign(sig), np.sign(bkg)))
     predictions = np.transpose(predictions) / float(n_classifiers)
     y = np.concatenate((np.ones(len(sig)), -np.ones(len(bkg))))
