@@ -281,12 +281,8 @@ for train_size in train_sizes:
         test_sig = np.delete(sig_indices, train_sig)
         test_bkg = np.delete(bkg_indices, train_bkg)
 
-        if AUGMENT:
-            predictions_train, y_train = create_augmented_data(sig[train_sig], bkg[train_bkg])
-            predictions_test, y_test = create_augmented_data(sig[test_sig], bkg[test_bkg])
-        else:
-            predictions_train, y_train = create_data(sig[train_sig], bkg[train_bkg])
-            predictions_test, y_test = create_data(sig[test_sig], bkg[test_bkg])
+        predictions_train, y_train = create_augmented_data(sig[train_sig], bkg[train_bkg])
+        predictions_test, y_test = create_augmented_data(sig[test_sig], bkg[test_bkg])
         print('split data')
         
         if num < start_num:
@@ -315,38 +311,37 @@ for train_size in train_sizes:
         gauges = [50, 10] + [1]*(n_iterations - 2)
         max_states = [16, 4] + [1]*(n_iterations - 2)     # cap the number of excited states accepted per iteration
 
-        if UPDATING_HAMILTONIAN:
-            mus = [np.zeros(n_classifiers)]
-            iterations = n_iterations
-            for i in range(iterations):
-                print('iteration', i)
-                l = reg*np.amax(np.diagonal(C_ij)*sigma*sigma - 2*sigma*C_i)
-                new_mus = []
-                for mu in mus:
-                    excited_states = anneal(C_i, C_ij, mu, sigma, l, strengths[i], energy_fractions[i], gauges[i], max_states[i])
-                    for s in excited_states:
-                        new_energy = total_hamiltonian(mu + s*sigma*zoom_factor, C_i, C_ij) / (train_size - 1)
-                        flips = np.ones(len(s))
-                        for a in range(len(s)):
-                            temp_s = np.copy(s)
-                            temp_s[a] = 0
-                            old_energy = total_hamiltonian(mu + temp_s*sigma*zoom_factor, C_i, C_ij) / (train_size - 1)
-                            energy_diff = new_energy - old_energy
-                            if energy_diff > 0:
-                                flip_prob = flip_probs[i]
-                                flip = np.random.choice([1, flip_state], size=1, p=[1-flip_prob, flip_prob])[0]
-                                flips[a] = flip
-                            else:
-                                flip_prob = flip_others_probs[i]
-                                flip = np.random.choice([1, flip_state], size=1, p=[1-flip_prob, flip_prob])[0]
-                                flips[a] = flip
-                        flipped_s = s * flips
-                        new_mus.append(mu + flipped_s*sigma*zoom_factor)
-                sigma *= zoom_factor
-                mus = new_mus
-                
-                np.save('./mus' + str(try_number) + '/mus' + str(train_size) + 'fold' + str(f) + 'iter' + str(i) + '.npy', np.array(mus))
+        mus = [np.zeros(n_classifiers)]
+        iterations = n_iterations
+        for i in range(iterations):
+            print('iteration', i)
+            l = reg*np.amax(np.diagonal(C_ij)*sigma*sigma - 2*sigma*C_i)
+            new_mus = []
             for mu in mus:
-                print('final accuracy on train set', accuracy_score(y_train, ensemble(predictions_train, mu)))
-                print('final accuracy on test set', accuracy_score(y_test, ensemble(predictions_test, mu)))
+                excited_states = anneal(C_i, C_ij, mu, sigma, l, strengths[i], energy_fractions[i], gauges[i], max_states[i])
+                for s in excited_states:
+                    new_energy = total_hamiltonian(mu + s*sigma*zoom_factor, C_i, C_ij) / (train_size - 1)
+                    flips = np.ones(len(s))
+                    for a in range(len(s)):
+                        temp_s = np.copy(s)
+                        temp_s[a] = 0
+                        old_energy = total_hamiltonian(mu + temp_s*sigma*zoom_factor, C_i, C_ij) / (train_size - 1)
+                        energy_diff = new_energy - old_energy
+                        if energy_diff > 0:
+                            flip_prob = flip_probs[i]
+                            flip = np.random.choice([1, flip_state], size=1, p=[1-flip_prob, flip_prob])[0]
+                            flips[a] = flip
+                        else:
+                            flip_prob = flip_others_probs[i]
+                            flip = np.random.choice([1, flip_state], size=1, p=[1-flip_prob, flip_prob])[0]
+                            flips[a] = flip
+                    flipped_s = s * flips
+                    new_mus.append(mu + flipped_s*sigma*zoom_factor)
+            sigma *= zoom_factor
+            mus = new_mus
+            
+            np.save('./mus' + str(try_number) + '/mus' + str(train_size) + 'fold' + str(f) + 'iter' + str(i) + '.npy', np.array(mus))
+        for mu in mus:
+            print('final accuracy on train set', accuracy_score(y_train, ensemble(predictions_train, mu)))
+            print('final accuracy on test set', accuracy_score(y_test, ensemble(predictions_test, mu)))
         num += 1
