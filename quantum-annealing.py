@@ -33,12 +33,6 @@ AUGMENT_OFFSET = 0.0075
 
 FIXING_VARIABLES = True
 
-def hamiltonian_checker(s, C_i, C_ij, reg):
-    if POS_WEIGHTS:
-        return hamiltonian_orig_posweights(s, C_i, C_ij, reg)
-    elif POS_NEG_WEIGHTS:
-        return hamiltonian_orig_posnegweights(s, C_i, C_ij, reg)
-
 def total_hamiltonian(s, C_i, C_ij):
     bits = len(s)
     h = 0 - np.dot(s, C_i)
@@ -173,6 +167,7 @@ def anneal(C_i, C_ij, mu, sigma, l, strength_scale, energy_fraction, ngauges, ma
             qaresult = qaresult * a
             qaresults[g*nreads:(g+1)*nreads] = qaresult
         
+        full_strings = np.zeros((len(qaresults), len(C_i)))
         if FIXING_VARIABLES:
             j = 0
             for i in range(len(C_i)):
@@ -340,7 +335,7 @@ for train_size in train_sizes:
             sigma *= zoom_factor
             mus = new_mus
             
-            np.save('./mus' + str(try_number) + '/mus' + str(train_size) + 'fold' + str(f) + 'iter' + str(i) + '.npy', np.array(mus))
+            np.save('./mus' + str(train_size) + 'fold' + str(f) + 'iter' + str(i) + '.npy', np.array(mus))
         for mu in mus:
             print('final accuracy on train set', accuracy_score(y_train, ensemble(predictions_train, mu)))
             print('final accuracy on test set', accuracy_score(y_test, ensemble(predictions_test, mu)))
