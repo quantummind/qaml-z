@@ -241,10 +241,7 @@ def create_augmented_data(sig, bkg):
 def ensemble(predictions, weights):
     ensemble_predictions = np.zeros(len(predictions[0]))
     
-    if POS_NEG_WEIGHTS:
-        return np.sign(np.dot(predictions.T, weights))
-    else:
-        return np.sign(np.dot(predictions.T, weights/2 + 0.5)/n_classifiers)
+    return np.sign(np.dot(predictions.T, weights))
 print('loading data')
 sig = np.loadtxt('sig.csv')
 bkg = np.loadtxt('bkg.csv')
